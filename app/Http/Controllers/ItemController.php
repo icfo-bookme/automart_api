@@ -87,8 +87,8 @@ class ItemController extends Controller
     public function latestItem()
 {
     $latestItem = Cache::remember('items.latest', 3600, function () {
-        return Item::active()
-            ->orderBy('id', 'desc') // latest
+        return Item::active()->where('section_id', 2)
+            ->orderBy('id', 'desc')
             ->take(30)
             ->get();
     });
