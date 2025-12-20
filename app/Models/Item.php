@@ -49,7 +49,7 @@ class Item extends Model
     protected $dates = [
         'created_at',
         'updated_at',
-        
+
     ];
 
     // Casts (optional, type casting for fields)
@@ -72,6 +72,14 @@ class Item extends Model
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
+
+    // Local Scope for active items
+    public function scopeActive($query)
+    {
+        return $query->where('is_published', 1)
+            ->where('soft_delete', 0);
+    }
+
 
     public function subCategory()
     {

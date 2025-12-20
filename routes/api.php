@@ -8,5 +8,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories-with-sub', [CategoryController::class, 'showCategoryWithSub']);
     Route::get('/items/search', [ItemController::class, 'searchByCategoryAndName']);
+    Route::get('/items/latest', [ItemController::class, 'latestItem']);
 
 });
