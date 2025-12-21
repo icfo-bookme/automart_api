@@ -84,19 +84,36 @@ class ItemController extends Controller
         ]);
     }
 
-    public function latestItem()
-{
-    $latestItem = Cache::remember('items.latest', 3600, function () {
-        return Item::active()->where('section_id', 2)
-            ->orderBy('id', 'desc')
-            ->take(30)
-            ->get();
-    });
+    public function latestItem($sectionId)
+    {
+        $latestItem = Cache::remember("items.$sectionId", 3600, function () use ($sectionId) {
+            return Item::with('subCategory')->active()->where('section_id', $sectionId)
+                ->orderBy('id', 'desc')
+                ->take(30)
+                ->get();
+        });
 
-    return response()->json([
-        'success' => true,
-        'data' => $latestItem
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'data' => $latestItem
+        ]);
+    }
 
+    public function allItems(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $perPage = 30;
+
+        $latestItem = Cache::remember("all.items.page.$page", 3600, function () use ($perPage) {
+            return Item::with('subCategory')
+                ->active()
+                ->orderBy('id', 'desc')
+                ->paginate(30);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $latestItem
+        ]);
+    }
 }
