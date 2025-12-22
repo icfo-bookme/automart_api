@@ -77,7 +77,8 @@ class Item extends Model
     public function scopeActive($query)
     {
         return $query->where('is_published', 1)
-            ->where('soft_delete', 0);
+            ->where('soft_delete', 0)
+            ->where('is_outsourced', 0);
     }
 
 

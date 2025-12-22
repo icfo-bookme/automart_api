@@ -87,10 +87,18 @@ class ItemController extends Controller
     public function latestItem($sectionId)
     {
         $latestItem = Cache::remember("items.$sectionId", 3600, function () use ($sectionId) {
-            return Item::with('subCategory')->active()->where('section_id', $sectionId)
-                ->orderBy('id', 'desc')
-                ->take(30)
-                ->get();
+
+            $query = Item::with('subCategory')
+                ->active()
+                ->where('section_id', $sectionId);
+
+            // conditionally order
+            if ($sectionId == 1) {
+            } else {
+                $query->orderBy('id', 'desc');
+            }
+
+            return $query->take(30)->get();
         });
 
         return response()->json([
@@ -98,6 +106,22 @@ class ItemController extends Controller
             'data' => $latestItem
         ]);
     }
+
+    public function Item($Id)
+    {
+        $Item = Cache::remember("item.$Id", 3600, function () use ($Id) {
+            return Item::with('category')
+                ->active()
+                ->where('id', $Id)
+                ->first();
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $Item
+        ]);
+    }
+
 
     public function allItems(Request $request)
     {
