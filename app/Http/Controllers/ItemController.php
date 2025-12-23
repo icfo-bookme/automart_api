@@ -140,4 +140,20 @@ class ItemController extends Controller
             'data' => $latestItem
         ]);
     }
+
+    public function getProdutsBySubCategory($subCategoryId)
+    { 
+        $products = Cache::remember("products.subcategory.$subCategoryId", 3600, function () use ($subCategoryId) {
+            return Item::with('subCategory')
+                ->active()
+                ->where('sub_category_id', $subCategoryId)
+                ->orderBy('id', 'desc')
+                ->get();
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ]);
+    }
 }

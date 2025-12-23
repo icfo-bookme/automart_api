@@ -11,5 +11,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/items/{sectionId}', [ItemController::class, 'latestItem']);
     Route::get('/items', [ItemController::class, 'allItems']);
     Route::get('/item/{Id}', [ItemController::class, 'Item']);
+    Route::get('/items/subcategory/{subCategoryId}', [ItemController::class, 'getProdutsBySubCategory']);
 
 });
