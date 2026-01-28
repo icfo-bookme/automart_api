@@ -110,7 +110,7 @@ class ItemController extends Controller
     public function Item($Id)
     {
         $Item = Cache::remember("item.$Id", 3600, function () use ($Id) {
-            return Item::with('category')
+            return Item::with('category','specifications')
                 ->active()
                 ->where('id', $Id)
                 ->first();
@@ -156,4 +156,23 @@ class ItemController extends Controller
             'data' => $products
         ]);
     }
+
+    public function offerItems(Request $request)
+    {
+        $page = $request->get('page', 1);
+        $perPage = 30;
+
+        $latestItem = Cache::remember("all.offers.page.$page", 3600, function () use ($perPage) {
+            return Item::with('subCategory')
+                ->active()
+                ->orderBy('id', 'asc')
+                ->paginate(30);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $latestItem
+        ]);
+    }
+
 }
