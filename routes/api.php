@@ -5,6 +5,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ItemController;
+use App\Http\Controllers\RatingController;
 
 Route::prefix('v1')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
@@ -17,4 +18,6 @@ Route::prefix('v1')->group(function () {
     Route::get('/offers/items', [ItemController::class, 'offerItems']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::post('/contact/store', [ContactController::class, 'store']);
+    Route::get('/reviews/{itemId}', [RatingController::class, 'index']);
+    Route::post('/reviews', [RatingController::class, 'store']);
 });
