@@ -284,6 +284,26 @@ private function getSearchSuggestions(?string $searchTerm): array
         ]);
     }
 
+
+    public function sectionItems(Request $request, $id)
+    {
+        $page = $request->get('page', 1);
+        $perPage = 30;
+
+        $latestItem = Cache::remember("all.sections.$id.page.$page", 3600, function () use ($perPage, $id) {
+            return Item::with('subCategory')
+                ->active()
+                ->where('section_id', $id)
+                ->orderBy('id', 'desc')
+                ->paginate(30);
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $latestItem
+        ]);
+    }
+
     public function offerItems(Request $request)
     {
         $page = $request->get('page', 1);

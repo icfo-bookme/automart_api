@@ -97,8 +97,8 @@ class Item extends Model
     //     return $this->belongsTo(Brand::class, 'brand_id');
     // }
 
-    // public function section()
-    // {
-    //     return $this->belongsTo(Section::class, 'section_id');
-    // }
+    public function section()
+    {
+        return $this->belongsTo(Section::class, 'section_id');
+    }
 }

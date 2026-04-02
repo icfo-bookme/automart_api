@@ -1,13 +1,24 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContactController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\RatingController;
+use App\Http\Controllers\SectionController;
 
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
+});
 Route::prefix('v1')->group(function () {
+    Route::get('/sections', [SectionController::class, 'index']);
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories-with-sub', [CategoryController::class, 'showCategoryWithSub']);
     Route::get('/items/search', [ItemController::class, 'searchByCategoryAndName']);
@@ -16,6 +27,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/item/{Id}', [ItemController::class, 'Item']);
     Route::get('/items/subcategory/{subCategoryId}', [ItemController::class, 'getProdutsBySubCategory']);
     Route::get('/offers/items', [ItemController::class, 'offerItems']);
+    Route::get('/sections/{id}', [ItemController::class, 'sectionItems']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::post('/contact/store', [ContactController::class, 'store']);
     Route::get('/reviews/{itemId}', [RatingController::class, 'index']);
