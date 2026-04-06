@@ -43,6 +43,7 @@ class Item extends Model
         'created_by',
         'updated_by',
         'has_watermark',
+        'yt_video',
     ];
 
     // Dates (for soft delete and timestamps)
