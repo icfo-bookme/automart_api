@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,7 +13,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+
+        $middleware->api(prepend: [
+            EnsureFrontendRequestsAreStateful::class,
+        ]);
+
+        // Exempt public order route from CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            'api/v1/orders',
+        ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -5,14 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Booking extends Model
+class Order extends Model
 {
     use HasFactory;
 
-    protected $table = 'bookings';
+    protected $table = 'orders';
 
     protected $fillable = [
-        'sale_id',
         'first_name',
         'last_name',
         'phone_number',
@@ -23,34 +22,35 @@ class Booking extends Model
         'thana',
         'area',
         'road_no',
-        'house_no',
         'flat_no',
         'car_no',
-        'booking_notes',
+        'order_code',
+        'order_notes',
         'customer_notes',
-        'remarks',
-        'advance_payment',
-        'discount_amount',
-        'shipping_amount',
+        'delivery_type',
+        'is_approve',
+        'is_rejected',
+        'rejected_by',
+        'is_shipment',
+        'is_payment',
         'status',
-        'invoice_date',
-        'soft_delete',
+        'is_shipment_charge_applied',
+        'discount_amount',
+        'advance_payment',
+        'collected_payment',
+        'payment_due',
+        'sales_by',
         'created_by',
         'updated_by',
+        'soft_delete',
+        'remarks'
     ];
 
-    protected $casts = [
-        'invoice_date' => 'date',
-        'advance_payment' => 'float',
-        'discount_amount' => 'float',
-        'shipping_amount' => 'float',
-    ];
-
+  
     /**
      * One booking has many booking details
      */
-    public function bookingDetails()
-    {
-        return $this->hasMany(BookingDetail::class, 'booking_id');
+   public function order_details(){
+        return $this->hasMany(OrderDetails::class,'order_id','id');
     }
 }

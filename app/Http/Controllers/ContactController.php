@@ -14,8 +14,6 @@ class ContactController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-     
-
         $validated = $request->validate([
             'name'           => 'required|string|max:50',
             'email'          => 'required|email|max:191',
