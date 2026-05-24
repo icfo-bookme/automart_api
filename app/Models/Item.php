@@ -102,4 +102,14 @@ class Item extends Model
     {
         return $this->belongsTo(Section::class, 'section_id');
     }
+
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class, 'item_id');
+    }
+
+    public function latestStock()
+    {
+        return $this->hasOne(Stock::class, 'item_id')->latestOfMany();
+    }
 }

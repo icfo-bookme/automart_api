@@ -124,6 +124,7 @@ class AuthController extends Controller
         if (! $request->user()) {
             return response()->json([
                 'success' => false,
+                'user'    => null,
                 'message' => 'Unauthenticated',
             ], 401);
         }
@@ -188,7 +189,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function changePassword(Request $request)
+    public function changePassword(Request $request): JsonResponse
     {
         $user = $request->user();
 
