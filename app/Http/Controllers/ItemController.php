@@ -354,4 +354,6 @@ class ItemController extends Controller
             'data' => $latestItem
         ]);
     }
+
+    
 }

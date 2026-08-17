@@ -39,4 +39,5 @@ Route::prefix('v1')->group(function () {
     Route::post('/contact/store', [ContactController::class, 'store']);
     Route::get('/reviews/{itemId}', [RatingController::class, 'index']);
     Route::post('/reviews', [RatingController::class, 'store']);
+    Route::post('/request-a-product', [ItemController::class, 'requestProduct']);
 });
