@@ -38,7 +38,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           password: ${{ secrets.DEPLOY_PASSWORD }}
-          port: ${{ secrets.DEPLOY_SSH_PORT || '22' }}
+          port: 22
           disable_host_key_checking: true
           script: |
             PHP="$(command -v php8.2 || command -v php)"
