@@ -16,7 +16,7 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y sshpass rsync
 
-      # Code upload (নিরাপদ rsync কনফিগারেশন)
+      # Code upload 
       - name: Upload code to server
         env:
           HOST: ${{ secrets.DEPLOY_HOST }}
@@ -46,10 +46,10 @@ jobs:
           script: |
             cd /var/www/automart_api
 
-            # 1. PHP 8.2 দিয়ে Composer Dependencies ইনস্টল
+            # 1. PHP 8.2  Composer Dependencies
             COMPOSER_ALLOW_SUPERUSER=1 php8.2 /usr/bin/composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-            # 2. File and Directory Permissions ফিক্স
+            # 2. File and Directory Permissions 
             sudo chown -R www-data:www-data /var/www/automart_api
             sudo chmod -R 775 /var/www/automart_api/storage /var/www/automart_api/bootstrap/cache
 
