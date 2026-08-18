@@ -1,0 +1,52 @@
+name: Auto Deploy
+
+# main branch-এ push করলেই deploy হয়ে যাবে (automatic).
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sshpass & rsync
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y sshpass rsync
+
+      # Code upload 
+      - name: Upload code to server
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PASS: ${{ secrets.DEPLOY_PASSWORD }}
+        run: |
+          sshpass -p "$PASS" rsync -az --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude '.git' --exclude 'node_modules' --exclude 'vendor' \
+            --exclude '.env' --exclude 'public/build' \
+            --exclude 'storage/app' --exclude 'storage/logs/*.log' \
+            ./ "$USER@$HOST:/var/www/automart_api/"
+
+      # Server-এ composer, migrate আর port 8002-এ restart — সব automatic.
+      - name: Post-deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          port: ${{ secrets.DEPLOY_SSH_PORT || '22' }}
+          disable_host_key_checking: true
+          script: |
+            PHP="$(command -v php8.2 || command -v php)"
+            COMPOSER="$(command -v composer || echo /usr/local/bin/composer)"
+            cd /var/www/automart_api
+            "$PHP" "$COMPOSER" install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
+            "$PHP" artisan config:clear
+            "$PHP" artisan view:clear
+            fuser -k 8002/tcp 2>/dev/null || true
+            sleep 1
+            nohup "$PHP" artisan serve --host=0.0.0.0 --port=8002 >> storage/logs/laravel.log 2>&1 &
