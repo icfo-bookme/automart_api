@@ -1,6 +1,5 @@
 name: Auto Deploy
 
-# main branch-এ push করলেই deploy হয়ে যাবে (automatic).
 on:
   push:
     branches: [main]
@@ -17,21 +16,25 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y sshpass rsync
 
-      # Code upload 
+      # Code upload (নিরাপদ rsync কনফিগারেশন)
       - name: Upload code to server
         env:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
           PASS: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
-          sshpass -p "$PASS" rsync -az --delete \
+          sshpass -p "$PASS" rsync -az \
             -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude '.git' --exclude 'node_modules' --exclude 'vendor' \
-            --exclude '.env' --exclude 'public/build' \
-            --exclude 'storage/app' --exclude 'storage/logs/*.log' \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'vendor' \
+            --exclude '.env' \
+            --exclude 'public/storage' \
+            --exclude 'storage/app' \
+            --exclude 'storage/logs/*.log' \
             ./ "$USER@$HOST:/var/www/automart_api/"
 
-      # Server-এ composer, migrate আর port 8002-এ restart — সব automatic.
+      # Server-এ Composer, Permissions & Cache Clear (Nginx + PHP-FPM Friendly)
       - name: Post-deploy on server
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -41,12 +44,21 @@ jobs:
           port: 22
           disable_host_key_checking: true
           script: |
-            PHP="$(command -v php8.2 || command -v php)"
-            COMPOSER="$(command -v composer || echo /usr/local/bin/composer)"
             cd /var/www/automart_api
-            "$PHP" "$COMPOSER" install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
-            "$PHP" artisan config:clear
-            "$PHP" artisan view:clear
-            fuser -k 8002/tcp 2>/dev/null || true
-            sleep 1
-            nohup "$PHP" artisan serve --host=0.0.0.0 --port=8002 >> storage/logs/laravel.log 2>&1 &
+
+            # 1. PHP 8.2 দিয়ে Composer Dependencies ইনস্টল
+            COMPOSER_ALLOW_SUPERUSER=1 php8.2 /usr/bin/composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+            # 2. File and Directory Permissions ফিক্স
+            sudo chown -R www-data:www-data /var/www/automart_api
+            sudo chmod -R 775 /var/www/automart_api/storage /var/www/automart_api/bootstrap/cache
+
+            # 3. Cache Clear & Production Optimization
+            sudo -u www-data php8.2 artisan optimize:clear
+            sudo -u www-data php8.2 artisan config:cache
+            sudo -u www-data php8.2 artisan route:cache
+            sudo -u www-data php8.2 artisan view:cache
+
+            # 4. PHP-FPM & Nginx Reload
+            sudo systemctl reload php8.2-fpm
+            sudo systemctl reload nginx
