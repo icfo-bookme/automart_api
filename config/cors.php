@@ -7,6 +7,7 @@ return [
 
     'allowed_origins' => [
         'http://localhost:3000', // Your Next.js app URL
+        'http://187.52.116.124:3000',
     ],
 
     'allowed_origins_patterns' => [],
