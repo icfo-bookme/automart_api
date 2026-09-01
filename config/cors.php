@@ -6,8 +6,10 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000', // Your Next.js app URL
+        'http://localhost:3000',     // Local Next.js app URL
         'http://187.52.116.124:3000',
+        'https://automart.com.bd',   // Production frontend
+        'https://www.automart.com.bd',
     ],
 
     'allowed_origins_patterns' => [],
