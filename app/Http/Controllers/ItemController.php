@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Item;
-use Illuminate\Support\Facades\Cache;
 
 class ItemController extends Controller
 {
@@ -15,12 +14,7 @@ class ItemController extends Controller
             'search'      => 'nullable|string'
         ]);
 
-        $cacheKey = 'items_search_cat_' . ($request->category_id ?? 'all')
-            . '_search_' . md5($request->search ?? '');
-
-        $cacheTime = 600;
-
-        $items = Cache::remember($cacheKey, $cacheTime, function () use ($request) {
+        $items = (function () use ($request) {
             $query = Item::query()
                 ->where('is_published', 1);
 
@@ -86,7 +80,7 @@ class ItemController extends Controller
             }
 
             return $results;
-        });
+        })();
 
         // Add similarity score to response for debugging/transparency
         if ($request->filled('search') && !$items->isEmpty()) {
@@ -109,7 +103,6 @@ class ItemController extends Controller
 
         return response()->json([
             'success' => true,
-            'from_cache' => Cache::has($cacheKey),
             'did_you_mean' => $this->didYouMeanSuggestion($items, $request->search),
             'data' => $items
         ]);
@@ -192,15 +185,13 @@ class ItemController extends Controller
             $suggestions[] = $commonTypos[strtolower($searchTerm)];
         }
 
-        // Get popular search terms from cache or database
-        $popularSearches = Cache::remember('popular_searches', 3600, function () {
-            return Item::where('is_published', 1)
-                ->select('name')
-                ->orderBy('views', 'desc')
-                ->limit(10)
-                ->pluck('name')
-                ->toArray();
-        });
+        // Get popular search terms from database
+        $popularSearches = Item::where('is_published', 1)
+            ->select('name')
+            ->orderBy('views', 'desc')
+            ->limit(10)
+            ->pluck('name')
+            ->toArray();
 
         // Find similar popular searches
         foreach ($popularSearches as $popular) {
@@ -213,21 +204,18 @@ class ItemController extends Controller
     }
     public function latestItem($sectionId)
     {
-        $latestItem = Cache::remember("items.$sectionId", 3600, function () use ($sectionId) {
+        $query = Item::with(['subCategory', 'latestStock'])
+            ->active()
+            ->where('section_id', $sectionId)
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            });
 
-            $query = Item::with(['subCategory', 'latestStock'])
-                ->active()
-                ->where('section_id', $sectionId)
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                });
+        if ($sectionId != 1) {
+            $query->orderBy('id', 'desc');
+        }
 
-            if ($sectionId != 1) {
-                $query->orderBy('id', 'desc');
-            }
-
-            return $query->take(30)->get();
-        });
+        $latestItem = $query->take(30)->get();
 
         return response()->json([
             'success' => true,
@@ -237,19 +225,16 @@ class ItemController extends Controller
 
     public function Item($Id)
     {
-        $Item = Cache::remember("item.$Id", 3600, function () use ($Id) {
+        $Item = Item::with(['category', 'specifications', 'latestStock'])
+            ->active()
+            ->where('id', $Id)
 
-            return Item::with(['category', 'specifications', 'latestStock'])
-                ->active()
-                ->where('id', $Id)
+            // latest stock must be public
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
 
-                // latest stock must be public
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                })
-
-                ->first();
-        });
+            ->first();
 
         return response()->json([
             'success' => true,
@@ -262,19 +247,16 @@ class ItemController extends Controller
     {
         $page = $request->get('page', 1);
 
-        $latestItem = Cache::remember("all.items.page.$page", 3600, function () {
+        $latestItem = Item::with(['subCategory', 'latestStock'])
+            ->active()
 
-            return Item::with(['subCategory', 'latestStock'])
-                ->active()
+            // latest stock must be public
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
 
-                // latest stock must be public
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                })
-
-                ->orderBy('id', 'desc')
-                ->paginate(30);
-        });
+            ->orderBy('id', 'desc')
+            ->paginate(30);
 
         return response()->json([
             'success' => true,
@@ -284,20 +266,17 @@ class ItemController extends Controller
 
     public function getProdutsBySubCategory($subCategoryId)
     {
-        $products = Cache::remember("products.subcategory.$subCategoryId", 3600, function () use ($subCategoryId) {
+        $products = Item::with(['subCategory', 'latestStock'])
+            ->active()
+            ->where('sub_category_id', $subCategoryId)
 
-            return Item::with(['subCategory', 'latestStock'])
-                ->active()
-                ->where('sub_category_id', $subCategoryId)
+            // latest stock must be public
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
 
-                // latest stock must be public
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                })
-
-                ->orderBy('id', 'desc')
-                ->get();
-        });
+            ->orderBy('id', 'desc')
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -310,20 +289,17 @@ class ItemController extends Controller
     {
         $page = $request->get('page', 1);
 
-        $latestItem = Cache::remember("all.sections.$id.page.$page", 3600, function () use ($id) {
+        $latestItem = Item::with(['subCategory', 'latestStock'])
+            ->active()
+            ->where('section_id', $id)
 
-            return Item::with(['subCategory', 'latestStock'])
-                ->active()
-                ->where('section_id', $id)
+            // latest stock must be public
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
 
-                // latest stock must be public
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                })
-
-                ->orderBy('id', 'desc')
-                ->paginate(30);
-        });
+            ->orderBy('id', 'desc')
+            ->paginate(30);
 
         return response()->json([
             'success' => true,
@@ -335,19 +311,16 @@ class ItemController extends Controller
     {
         $page = $request->get('page', 1);
 
-        $latestItem = Cache::remember("all.offers.page.$page", 3600, function () {
+        $latestItem = Item::with(['subCategory', 'latestStock'])
+            ->active()
 
-            return Item::with(['subCategory', 'latestStock'])
-                ->active()
+            // latest stock must be public
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
 
-                // latest stock must be public
-                ->whereHas('latestStock', function ($q) {
-                    $q->where('isPublic', 1);
-                })
-
-                ->orderBy('id', 'asc')
-                ->paginate(30);
-        });
+            ->orderBy('id', 'asc')
+            ->paginate(30);
 
         return response()->json([
             'success' => true,
