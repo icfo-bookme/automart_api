@@ -15,8 +15,10 @@ class ItemController extends Controller
         ]);
 
         $items = (function () use ($request) {
-            $query = Item::query()
-                ->where('is_published', 1);
+            $query = Item::active()
+                ->whereHas('latestStock', function ($q) {
+                    $q->where('isPublic', 1);
+                });
 
             if ($request->filled('category_id')) {
                 $query->where('category_id', $request->category_id);
@@ -57,7 +59,10 @@ class ItemController extends Controller
 
                     // If still no results with category filter, show across all categories
                     if ($request->filled('category_id') && $matchedItems->isEmpty()) {
-                        $allItems = Item::where('is_published', 1)
+                        $allItems = Item::active()
+                            ->whereHas('latestStock', function ($q) {
+                                $q->where('isPublic', 1);
+                            })
                             ->get(['id', 'name', 'sales_price', 'regular_price', 'thumbnail']);
 
                         $matchedItems = $allItems->filter(function ($item) use ($searchTerm) {
@@ -186,7 +191,10 @@ class ItemController extends Controller
         }
 
         // Get popular search terms from database
-        $popularSearches = Item::where('is_published', 1)
+        $popularSearches = Item::active()
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
             ->select('name')
             ->orderBy('views', 'desc')
             ->limit(10)
@@ -261,6 +269,23 @@ class ItemController extends Controller
         return response()->json([
             'success' => true,
             'data' => $latestItem
+        ]);
+    }
+
+    public function getProductsByCategory($categoryId)
+    {
+        $products = Item::with(['subCategory', 'latestStock'])
+            ->active()
+            ->where('category_id', $categoryId)
+            ->whereHas('latestStock', function ($q) {
+                $q->where('isPublic', 1);
+            })
+            ->orderBy('id', 'desc')
+            ->paginate(30);
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
         ]);
     }
 
